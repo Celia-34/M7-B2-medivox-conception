@@ -41,7 +41,24 @@ flowchart LR
 
 Les comptes-rendus ne sont transmis qu'à une solution dont l'hébergement, la localisation et la réutilisation des données sont approuvés. A défaut, un LLM auto-hébergé est utilisé. Chaque variable extraite conserve la version du LLM, du prompt et du schéma, ainsi que la citation exacte de la phrase source et sa position dans le document. La décision reste portée par le modèle ML explicable. Le professionnel peut vérifier chaque variable extraite contre le texte original avant validation.
 
-**Force** : l'option exploite l'information non structurée des comptes-rendus tout en conservant un prédicteur ML plus explicable, calibrable et auditable. La sortie LLM est contrainte par un schéma, accompagnée de la provenance des champs et séparée du score ML. Un protocole d'ablation compare le ML avec et sans variables extraites sur le même jeu de test, sans annoncer de gain avant preuve. La stack comprend un modèle LLM d'extraction, un prompt et un schéma JSON versionnés, un validateur de contrat, un stockage des variables et de leur provenance, puis le pipeline ML et son registre.
+Le schéma autorise explicitement la valeur `null` lorsqu'une information est absente, illisible ou non suffisamment fiable. Cette valeur déclenche une gestion dédiée et ne doit pas être interprétée comme une valeur clinique.
+
+**Estimation du coût** :
+Unité de coût : **un compte-rendu extrait**, donc un document, et non une prédiction ML. Hypothèse de volume : **5 000 séjours par jour**, avec un compte-rendu par séjour, soit environ **150 000 documents par mois**. Hypothèse de taille : **2 000 tokens en entrée et 150 tokens JSON en sortie par document**, à confirmer par échantillonnage des comptes-rendus. Le calcul est :
+
+`coût LLM mensuel = 150 000 × (2 000 × tarif entrée + 150 × tarif sortie)`.
+
+En conservant l'ordre de grandeur de **0,02 € par document**, l'extraction LLM représente environ **3 000 €/mois**, auxquels s'ajoutent environ **50 €/mois** pour l'hébergement du modèle ML, soit **environ 3 050 €/mois avant relecture humaine**. Ce montant reste une estimation : il dépend du modèle, du tarif public retenu, de la longueur réelle des textes, des réessais et du choix entre API approuvée et LLM auto-hébergé. Une API peut réduire l'infrastructure fixe mais ajoute un coût par appel. Un modèle auto-hébergé maîtrise mieux les flux mais ajoute l'infrastructure GPU et son exploitation.
+
+| Poste | ~€/mois |
+|---|---:|
+| Extraction LLM : 150 000 documents × ~0,02 € | ~3 000 |
+| Hébergement du service ML | ~50 |
+| **Total option B, avant relecture humaine** | **~3 050** |
+
+**Coûts cachés** : relecture des extractions incertaines, stockage et traçabilité des citations, latence pour les équipes, maintenance du prompt et du schéma, évaluation des versions, dépendance au fournisseur et éventuel surcoût de réessai. Le coût de relecture doit être estimé séparément à partir du taux d'abstention et du temps moyen par dossier.
+
+**Force** : l'option exploite l'information non structurée des comptes-rendus tout en conservant un prédicteur ML plus explicable, calibrable et auditable. La sortie LLM est contrainte par un schéma, accompagnée de la provenance des champs et séparée du score ML. Une comparaison contrôlée compare, sur le même jeu de test, le ML avec les variables historiques seules et le ML enrichi par les variables extraites. Elle mesure l'apport réel des variables LLM sur les mêmes métriques, sans annoncer de gain avant preuve. La stack comprend un modèle LLM d'extraction, un prompt et un schéma JSON versionnés, un validateur de contrat, un stockage des variables et de leur provenance, puis le pipeline ML et son registre.
 
 - **Conformité (qualifiée : intermédiaire)** : le texte peut contenir des données de santé et le LLM introduit un transfert, une conservation et un traitement supplémentaires. Les mesures de maîtrise sont la minimisation des champs, l'hébergement et les flux approuvés, l'absence de réutilisation fournisseur, le chiffrement, les habilitations, les durées de conservation, la traçabilité, une DPIA si requise et la supervision humaine. Le niveau reste intermédiaire tant que la base légale, le fournisseur, la localisation et la qualification de l'usage clinique ne sont pas validés.
 - **Performance (chiffrée, cibles initiales à valider)** : extraction LLM p95 inférieur ou égal à 3 s par document, prédiction ML p95 inférieur ou égal à 200 ms et taux d'erreur technique inférieur à 1 %. La métrique de qualité d'extraction est suivie séparément, avec un objectif initial d'au moins 95 % de champs acceptés par le validateur. Ces valeurs sont des hypothèses à mesurer sur un jeu représentatif, pas des résultats acquis.

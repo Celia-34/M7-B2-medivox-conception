@@ -36,6 +36,19 @@ flowchart LR
 
 Le contrat de données contrôle les types, bornes, valeurs manquantes et features autorisées. Le pipeline partagé est utilisé à l'entraînement et à l'inférence. Le jeu de test indépendant inclut un découpage temporel et des résultats par sexe, âge, comorbidités et IMC. Le seuil n'est pas fixé automatiquement à 0,5 : il est documenté, validé avec le métier et réévalué selon le coût des faux négatifs et des faux positifs. Les accès sont limités par rôle, les échanges et les secrets sont protégés, les données sont minimisées et les journaux d'audit sont eux-mêmes à accès contrôlé.
 
+**Estimation du coût** :
+Unité de coût : **une prédiction ML par requête**, et non un document traité par un LLM. Hypothèse de volume : **5 000 séjours par jour**, soit environ **150 000 prédictions par mois**. Le modèle tabulaire n'appelle aucun LLM et les besoins de calcul restent faibles. En reprenant l'ordre de grandeur du mini-cours, l'hébergement du service, du monitoring et du pipeline représente environ **50 €/mois**, soit environ **0,0003 €/prédiction** hors coûts humains.
+
+Le coût d'entraînement est ponctuel et supposé inclus dans cette enveloppe de calcul, il doit être recalculé si les réentraînements deviennent fréquents ou si le volume de données augmente. Cette estimation est un ordre de grandeur, pas une facture : elle dépend du fournisseur, du niveau de disponibilité, de la taille des données, de la rétention des journaux et de l'architecture réellement déployée.
+
+| Poste | ~€/mois |
+|---|---:|
+| Hébergement du service ML, monitoring et pipeline | ~50 |
+| Appels LLM | 0 |
+| **Total option A** | **~50** |
+
+**Coûts cachés** : revue humaine des abstentions, stockage et conservation des données et journaux, maintenance du pipeline et des dépendances, tests de charge, surveillance de la dérive, réentraînements, sauvegardes et exigences de haute disponibilité. Le coût de revue doit être estimé séparément à partir du taux d'abstention et du temps moyen par dossier.
+
 **Force** : architecture sobre, explicable et adaptée aux données disponibles. Elle supprime la duplication `train.py`/`predict.py`, évite le LLM pour une prédiction structurée, permet une comparaison reproductible et rend visibles les performances, la calibration et les écarts par groupe. Le registre conserve la version du modèle, du dataset, du pipeline, du seuil et des métriques.
 - **Performance (chiffrée, cibles initiales à valider)** : p95 de prédiction inférieur ou égal à 200 ms, débit d'au moins 10 requêtes par seconde et taux d'erreur inférieur à 1 %. Ces ordres de grandeur seront confirmés ou corrigés sur un jeu de charge représentatif avant le go-live, ils ne constituent pas encore des résultats mesurés.
 - **Sobriété (chiffrée, budgets initiaux à valider)** : service limité à 1 vCPU et 512 MiB de mémoire, zéro appel à un LLM par prédiction, et mesure de l'énergie ou d'un proxy reproductible par 1 000 prédictions et par entraînement. Les budgets CPU, mémoire et appels sont des hypothèses d'architecture. La consommation énergétique reste à mesurer.

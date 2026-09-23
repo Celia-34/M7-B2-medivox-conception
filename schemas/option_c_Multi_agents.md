@@ -44,34 +44,38 @@ flowchart LR
 - **Anti-injection de prompt** : le LLM ne reçoit que des champs structurés en liste blanche (jamais de texte libre brut), avec séparation stricte instruction / donnée, neutralisation des motifs de consigne détectés, sortie contrainte par schéma JSON validé. Il n'a **ni outil, ni accès base, ni accès réseau**, et son texte n'est jamais réinjecté dans le score : il intervient après la prédiction, en mise en forme seulement. Un contenu suspect part en quarantaine avec alerte, et l'explication factuelle (facteurs du modèle) est servie sans LLM.
 
 **Estimation du cout** :
-≈ 800 tokens en entrée et 250 en sortie ; mesure de l'énergie ou d'un proxy reproductible par 1 000 décisions. **Unité de coût = la décision** (pas le document).
-*Hypothèse de volume : 5 000 séjours/jour, 1 décision par séjour ≈ **150 000 décisions/mois**. Tarifs publics, ordres de grandeur.*
+≈ 800 tokens en entrée et 250 en sortie ; mesure de l'énergie ou d'un proxy reproductible par 1 000 décisions. **Unité de coût = la décision** (pas le document) — mais ici 1 séjour = 1 compte-rendu = 1 décision, donc les volumes de B et C sont directement comparables.
+*Hypothèse de volume : 5 000 séjours/jour, 1 décision par séjour ≈ **150 000 décisions/mois**.*
+*Hypothèses tarifaires : **les mêmes paliers que l'option B** (petit ~0,20 € / M entrée, intermédiaire ~1 €, grand ~3 € ; sortie ≈ 3× l'entrée). Tarifs publics, ordres de grandeur.*
 
-| Poste | ~€/mois |
-|---|---|
-| Hébergement orchestrateur + agents (2 instances, 2 vCPU / 1,5 GiB) | ~100–150 |
-| Observabilité / traçage multi-agents (obligatoire ici) | ~50–100 |
-| Appels LLM d'explication (1/décision, 800 in + 250 out) | ~50 (petit modèle) à ~700 (grand modèle) |
-| **Total option C** | **~200 à ~950** |
-| *Rappel option A* | *~50* |
+| Poste (~€/mois) | Petit modèle | Intermédiaire | Grand modèle |
+|---|---:|---:|---:|
+| Hébergement orchestrateur + agents (2 instances, 2 vCPU / 1,5 GiB) | ~100–150 | ~100–150 | ~100–150 |
+| Observabilité / traçage multi-agents (obligatoire ici) | ~50–100 | ~50–100 | ~50–100 |
+| Appels LLM d'explication (1/décision, 800 in + 250 out) | ~50 | ~230 | ~700 |
+| **Total option C** | **~200–250** | **~400–480** | **~850–950** |
+| *Rappel option B (même palier)* | *~125* | *~420* | *~1 150* |
+| *Rappel option A (0 token)* | *~50* | *~50* | *~50* |
 
-Soit ≈ **0,0015 à 0,006 €/décision**, c'est-à-dire **4× à 20× l'option A** selon le modèle retenu — l'écart est porté par le choix du modèle, pas par l'orchestration. En mode dégradé (explication par facteurs, sans LLM), C retombe à ~150–250 €/mois.
+Soit ≈ **0,0015 à 0,006 €/décision**, c'est-à-dire **4× à 19× l'option A** selon le palier retenu — l'écart avec A est porté par le choix du modèle, pas par l'orchestration.
 
-**Coûts cachés** : (1) relecture humaine des abstentions — à 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois, plus que toute l'infrastructure** (ce poste existe aussi en A, mais un superviseur trop prudent l'amplifie) ; (2) maintenance de la stack d'orchestration et des prompts ; (3) dépendance au fournisseur LLM (tarifs, dépréciation de modèle) ; (4) latence subie par les soignants.
+**Comparée à B au même palier tarifaire, C est du même ordre de grandeur** : elle consomme deux fois moins de tokens par unité (1 050 contre 2 150) mais paie une infrastructure fixe plus lourde (orchestration + observabilité multi-agents). Résultat : C est **plus chère que B** au palier petit modèle, équivalente au palier intermédiaire, et à peine moins chère au palier grand modèle. **Le coût ne départage donc pas B et C** : l'argument contre C reste le sur-engineering, pas la facture. En mode dégradé (explication par facteurs, sans LLM), C retombe à ~150–250 €/mois — mais elle paie alors une orchestration dont elle n'utilise plus la sortie LLM.
+
+**Coûts cachés** : (1) relecture humaine des abstentions — à 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois, plus que toute l'infrastructure**. Ce poste est commun aux trois options : il ne les départage pas, mais un superviseur trop prudent l'amplifie ; (2) maintenance de la stack d'orchestration et des prompts ; (3) dépendance au fournisseur LLM (tarifs, dépréciation de modèle) ; (4) latence subie par les soignants.
 
 ---
 
 **Force** : modularité réelle — chaque agent est testable, remplaçable et tracé séparément ; le journal par étape facilite l'explication d'un cas ; l'architecture devient pertinente si le flux devient réellement multi-étapes hétérogène (multi-sources, réconciliation, contrôles réglementaires enchaînés).
 
 - **Performance (chiffrée — cibles initiales, non mesurées)** : p95 ≤ 1,5 s par décision avec explication LLM, ≤ 400 ms en mode dégradé sans LLM ; 4 à 6 transitions d'orchestration par décision ; débit ≥ 3 req/s ; taux d'erreur < 1 %. À confirmer sur un jeu de charge représentatif avant go-live.
-- **Sobriété (chiffrée — budgets initiaux, non mesurés)** : 2 vCPU et 1,5 GiB par instance ; ≤ 1 appel LLM par décision (0 en mode dégradé), soit ≈ **0,0015 à 0,006 €/décision**, c'est-à-dire **4× à 20× l'option A** selon le modèle retenu — l'écart est porté par le choix du modèle, pas par l'orchestration. En mode dégradé (explication par facteurs, sans LLM), C retombe à ~150–250 €/mois. Couts cachés identiques à l'option A : ~4 000 €/mois.
+- **Sobriété (chiffrée — budgets initiaux, non mesurés)** : 2 vCPU et 1,5 GiB par instance ; ≤ 1 appel LLM par décision (0 en mode dégradé), soit ≈ **0,0015 à 0,006 €/décision** selon le palier de modèle (détail dans l'estimation de coût ci-dessus), contre ~0,0003 € pour A et ~0,001 à 0,008 € pour B. En mode dégradé, C retombe à ~150–250 €/mois. Coûts cachés identiques à A et B : ~4 000 €/mois de relecture humaine.
 - **Conformité (qualifiée : intermédiaire)** : minimisation, traçabilité par étape et supervision humaine sont prévues, mais la surface élargie et la présence d'un LLM rendent le flux plus difficile à prouver. *Mesures de maîtrise* : journal d'audit par agent avec identifiant d'état, interdiction de décision autonome, filtre anti-injection et passerelle LLM sans outil, sans donnée directement identifiante et sans réutilisation pour entraînement, registre des traitements, DPIA si requise, revue métier et juridique avant exposition.
 - **Évolutivité (qualifiée : forte sur l'ajout de capacités, intermédiaire sur la montée en charge)** : ajouter, remplacer ou désactiver un agent est peu coûteux grâce au graphe et à l'état partagé ; en revanche la latence et le coût cumulés limitent le passage à l'échelle. *Mesures de maîtrise* : versionnage du graphe et de l'état, contrats d'interface entre agents, budgets de latence/coût/itérations appliqués par l'orchestrateur, tests de charge et déploiement progressif multi-sites.
 
---- 
+---
 
 **Faiblesse** :
-* **sur-engineering probable** pour une prédiction tabulaire mono-étape — le découpage n'apporte ici aucun gain de qualité de prédiction, pour 4 à 20× le coût de A.
+* **sur-engineering probable** pour une prédiction tabulaire mono-étape — le découpage n'apporte ici aucun gain de qualité de prédiction, pour 4 à 19× le coût de A, et sans être moins chère que B au même palier tarifaire.
 * **Latence et coût cumulés**
 * **Complexité** : debug difficile, points de panne multiples, observabilité exigeante, dépendance à un fournisseur LLM. Les garde-fous (bornes de boucle, anti-injection) réduisent les risques mais **ajoutent eux-mêmes du code à tester et à maintenir**. 
 

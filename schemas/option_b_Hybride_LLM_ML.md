@@ -48,23 +48,37 @@ Unité de coût : **un compte-rendu extrait**, donc un document, et non une pré
 
 `coût LLM mensuel = 150 000 × (2 000 × tarif entrée + 150 × tarif sortie)`.
 
-En conservant l'ordre de grandeur de **0,02 € par document**, l'extraction LLM représente environ **3 000 €/mois**, auxquels s'ajoutent environ **50 €/mois** pour l'hébergement du modèle ML, soit **environ 3 050 €/mois avant relecture humaine**. Ce montant reste une estimation : il dépend du modèle, du tarif public retenu, de la longueur réelle des textes, des réessais et du choix entre API approuvée et LLM auto-hébergé. Une API peut réduire l'infrastructure fixe mais ajoute un coût par appel. Un modèle auto-hébergé maîtrise mieux les flux mais ajoute l'infrastructure GPU et son exploitation.
+**Hypothèses tarifaires — communes aux options B et C**, sans quoi les deux chiffrages ne sont pas comparables. Tarifs publics, ordres de grandeur, sortie facturée environ 3× l'entrée :
 
-| Poste | ~€/mois |
-|---|---:|
-| Extraction LLM : 150 000 documents × ~0,02 € | ~3 000 |
-| Hébergement du service ML | ~50 |
-| **Total option B, avant relecture humaine** | **~3 050** |
+| Palier de modèle | ~€ / M tokens entrée | ~€ / M tokens sortie |
+|---|---:|---:|
+| Petit modèle (*small* / *mini*) | ~0,20 | ~0,60 |
+| Modèle intermédiaire | ~1 | ~3 |
+| Grand modèle | ~3 | ~9 |
 
-**Coûts cachés** : relecture des extractions incertaines, stockage et traçabilité des citations, latence pour les équipes, maintenance du prompt et du schéma, évaluation des versions, dépendance au fournisseur et éventuel surcoût de réessai. Le coût de relecture doit être estimé séparément à partir du taux d'abstention et du temps moyen par dossier.
+À ce volume, l'extraction consomme environ **300 M tokens d'entrée et 22 M de sortie par mois** :
+
+| Poste (~€/mois) | Petit modèle | Intermédiaire | Grand modèle |
+|---|---:|---:|---:|
+| Extraction LLM : 150 000 documents × 2 150 tokens | ~75 | ~370 | ~1 100 |
+| Hébergement du service ML | ~50 | ~50 | ~50 |
+| **Total option B, avant relecture humaine** | **~125** | **~420** | **~1 150** |
+| *Rappel option A* | *~50* | *~50* | *~50* |
+
+Soit ≈ **0,001 à 0,008 €/document**, c'est-à-dire **2,5× à 23× l'option A**. **L'écart avec A est porté par le choix du modèle, pas par l'architecture d'extraction** : changer de palier déplace le total d'un facteur 10, alors que le schéma et le validateur n'y changent rien. Un chiffrage à point unique serait donc trompeur, et B doit être lue **au même palier que l'option C** (voir le tableau de rappel dans l'option C). 
+
+Ce montant reste une estimation : il dépend du modèle, du tarif public retenu, de la longueur réelle des textes, des réessais et du choix entre API approuvée et LLM auto-hébergé. Une API peut réduire l'infrastructure fixe mais ajoute un coût par appel. Un modèle auto-hébergé maîtrise mieux les flux mais ajoute l'infrastructure GPU et son exploitation, dont le coût fixe se situe, à ce volume, dans l'ordre de grandeur du palier intermédiaire.
+
+**Coûts cachés** : relecture des extractions incertaines, stockage et traçabilité des citations, latence pour les équipes, maintenance du prompt et du schéma, évaluation des versions, dépendance au fournisseur et éventuel surcoût de réessai. La relecture humaine des abstentions — à 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois, plus que toute l'infrastructure**. Ce poste est commun aux trois options : il ne les départage pas, mais un seuil d'abstention trop prudent l'amplifie.
 
 **Force** : l'option exploite l'information non structurée des comptes-rendus tout en conservant un prédicteur ML plus explicable, calibrable et auditable. La sortie LLM est contrainte par un schéma, accompagnée de la provenance des champs et séparée du score ML. Une comparaison contrôlée compare, sur le même jeu de test, le ML avec les variables historiques seules et le ML enrichi par les variables extraites. Elle mesure l'apport réel des variables LLM sur les mêmes métriques, sans annoncer de gain avant preuve. La stack comprend un modèle LLM d'extraction, un prompt et un schéma JSON versionnés, un validateur de contrat, un stockage des variables et de leur provenance, puis le pipeline ML et son registre.
 
 - **Conformité (qualifiée : intermédiaire)** : le texte peut contenir des données de santé et le LLM introduit un transfert, une conservation et un traitement supplémentaires. Les mesures de maîtrise sont la minimisation des champs, l'hébergement et les flux approuvés, l'absence de réutilisation fournisseur, le chiffrement, les habilitations, les durées de conservation, la traçabilité, une DPIA si requise et la supervision humaine. Le niveau reste intermédiaire tant que la base légale, le fournisseur, la localisation et la qualification de l'usage clinique ne sont pas validés.
 - **Performance (chiffrée, cibles initiales à valider)** : extraction LLM p95 inférieur ou égal à 3 s par document, prédiction ML p95 inférieur ou égal à 200 ms et taux d'erreur technique inférieur à 1 %. La métrique de qualité d'extraction est suivie séparément, avec un objectif initial d'au moins 95 % de champs acceptés par le validateur. Ces valeurs sont des hypothèses à mesurer sur un jeu représentatif, pas des résultats acquis.
-- **Sobriété (chiffrée, hypothèses à valider)** : un seul appel LLM par document, sortie plafonnée à 300 tokens, et coût d'extraction estimé à 0,02 € par document, hors stockage et relecture humaine. Le ML reste limité à 1 vCPU et 512 MiB. Le coût réel, l'énergie et le taux de réessai sont à mesurer. Le budget LLM est un ordre de grandeur dépendant du tarif et du nombre de tokens.
+- **Sobriété (chiffrée, hypothèses à valider)** : un seul appel LLM par document, sortie plafonnée à 300 tokens, et coût d'extraction estimé entre **0,0005 et 0,007 € par document** selon le palier de modèle retenu (voir l'estimation ci-dessus), hors stockage et relecture humaine. Le ML reste limité à 1 vCPU et 512 MiB. Le coût réel, l'énergie et le taux de réessai sont à mesurer. Le budget LLM est un ordre de grandeur dépendant du tarif et du nombre de tokens.
 - **Évolutivité (qualifiée : intermédiaire)** : le schéma d'extraction, les contrats versionnés et le registre facilitent l'ajout de champs, de sources et de versions de modèles. Les points de rupture sont le débit et le tarif du LLM, les changements de format des comptes-rendus, la dérive des formulations et la capacité de relecture humaine. La maîtrise repose sur tests de contrat, file d'attente, limitation de débit, versionnement, déploiement progressif et retour au modèle tabulaire sans nouvelles variables.
 
 **Faiblesse** : l'extraction peut halluciner, omettre une information ou interpréter différemment une formulation clinique, une sortie JSON valide n'est pas nécessairement vraie. Elle ajoute latence, coût par document, dépendance à un fournisseur et une nouvelle surface de risque sur des données sensibles. La qualité des variables extraites doit être évaluée par champ, groupe et période, et le modèle ML peut apprendre les erreurs systématiques du LLM. Le système ne doit pas être présenté comme un diagnostic ni comme une décision autonome.
+Le cout du modele **2,5× à 23× l'option A** est une faiblesse.
 
 **Fallback** : si le LLM est indisponible, hors budget, trop lent, non conforme, si le schéma est invalide, si la confiance est insuffisante ou si une variable critique n'est pas vérifiable, aucune variable extraite n'alimente le score. Le dossier passe en relecture humaine ou revient au prédicteur tabulaire sans variables LLM, uniquement si ce mode a été validé séparément, sinon la procédure métier manuelle s'applique. Toute correction humaine est journalisée avec la version du LLM, du prompt, du schéma et du modèle ML. Un rollback bloque la version fautive et conserve le dernier modèle approuvé, sans décision automatique pendant la transition.

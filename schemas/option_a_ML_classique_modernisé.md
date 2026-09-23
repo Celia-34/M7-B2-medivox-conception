@@ -47,7 +47,9 @@ Le coût d'entraînement est ponctuel et supposé inclus dans cette enveloppe de
 | Appels LLM | 0 |
 | **Total option A** | **~50** |
 
-**Coûts cachés** : revue humaine des abstentions, stockage et conservation des données et journaux, maintenance du pipeline et des dépendances, tests de charge, surveillance de la dérive, réentraînements, sauvegardes et exigences de haute disponibilité. La relecture humaine des abstentions — à 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois, plus que toute l'infrastructure** (ce poste existe aussi en A, mais un superviseur trop prudent l'amplifie)
+L'option A ne consomme **aucun token** : elle est insensible au palier de modèle LLM et sert donc de **référence de comparaison** pour les options B et C, qui sont chiffrées sur des hypothèses tarifaires communes (petit modèle, intermédiaire, grand modèle).
+
+**Coûts cachés** : revue humaine des abstentions, stockage et conservation des données et journaux, maintenance du pipeline et des dépendances, tests de charge, surveillance de la dérive, réentraînements, sauvegardes et exigences de haute disponibilité. La relecture humaine des abstentions — à 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois, plus que toute l'infrastructure**. Ce poste est commun aux trois options : il ne les départage pas, mais un seuil d'abstention trop prudent l'amplifie.
 
 **Force** : architecture sobre, explicable et adaptée aux données disponibles. Elle supprime la duplication `train.py`/`predict.py`, évite le LLM pour une prédiction structurée, permet une comparaison reproductible et rend visibles les performances, la calibration et les écarts par groupe. Le registre conserve la version du modèle, du dataset, du pipeline, du seuil et des métriques.
 - **Performance (chiffrée, cibles initiales à valider)** : p95 de prédiction inférieur ou égal à 200 ms, débit d'au moins 10 requêtes par seconde et taux d'erreur inférieur à 1 %. Ces ordres de grandeur seront confirmés ou corrigés sur un jeu de charge représentatif avant le go-live, ils ne constituent pas encore des résultats mesurés.

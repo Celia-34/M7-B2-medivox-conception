@@ -28,9 +28,10 @@ coût réel.
 
 | # | Hypothèse | Valeur retenue | Source / date |
 |---|---|---|---|
-| H1 | Volume (dossiers/mois) | _…_ | _…_ |
-| H2 | Tokens moyens par compte-rendu (in / out) | _…_ | _…_ |
-| H3 | Tarif du modèle retenu | _…_ | _…_ |
+| H1 | Volume (dossiers/mois) | 5 000 séjours/jour, 1 décision par séjour | ressource, 23/09/26 |
+| H2 | Tokens moyens par compte-rendu (in / out) | 800/250 | option C, 23/09/26 |
+| H3 | Cout de revue manuelle | 5 % de 5 000 dossiers/jour et ~2 min par cas, ≈ 1 ETP, soit **~4 000 €/mois | estimé, 23/09/26 |
+| H4 | Tarif du modèle retenu | _…_ | _…_ |
 
 > ⚠️ **Performance de l'option B** : aucun gain annoncé sans le **protocole
 > d'ablation** qui le prouverait (même modèle avec / sans les variables
